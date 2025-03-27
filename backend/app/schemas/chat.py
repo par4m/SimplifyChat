@@ -1,4 +1,4 @@
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, Field
 from typing import List, Optional
 from datetime import datetime
 
@@ -28,10 +28,14 @@ class ConversationCreate(ConversationBase):
 class Conversation(ConversationBase):
     id: UUID4
     created_at: datetime
-    messages: List[Message] = []
+    messages: List[Message] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat(),
+            UUID4: lambda v: str(v)
+        }
 
 class ChatSummary(BaseModel):
     summary: str

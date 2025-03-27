@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/simplifychat")
+    DATABASE_URL: str = "postgresql+asyncpg://simplifychat:simplifychat@localhost:5432/simplifychat"
     
     @property
     def SYNC_DATABASE_URL(self) -> str:

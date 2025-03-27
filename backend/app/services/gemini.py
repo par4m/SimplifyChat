@@ -3,19 +3,20 @@ from ..core.config import settings
 from ..schemas.chat import Message
 
 genai.configure(api_key=settings.GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-pro')
+model = genai.GenerativeModel('gemini-1.5-pro-latest')
 
 async def generate_summary(messages: list[Message], participants: list[str]) -> dict:
-    prompt = f"""
-    Analyze this conversation between {', '.join(participants)}:
+    # Create the conversation text
+    conversation_text = "\n".join([f"{msg.sender}: {msg.content}" for msg in messages])
     
-    {'\n'.join([f"{msg.sender}: {msg.content}" for msg in messages])}
-    
-    Provide:
-    1. A concise 3-sentence summary of the conversation
-    2. Key discussion points (as a list)
-    3. Action items (if any, as a list)
-    """
+    prompt = f"""Analyze this conversation between {', '.join(participants)}:
+
+{conversation_text}
+
+Provide:
+1. A concise 3-sentence summary of the conversation
+2. Key discussion points (as a list)
+3. Action items (if any, as a list)"""
     
     response = await model.generate_content_async(prompt)
     content = response.text
