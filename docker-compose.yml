@@ -6,29 +6,42 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=postgresql+asyncpg://simplifychat:simplifychat@db:5432/simplifychat
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - .:/app
     command: >
-      sh -c "alembic upgrade head &&
-             uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload"
+      sh -c "
+        echo 'Waiting for database...' &&
+        while ! nc -z db 5432; do
+          sleep 1
+        done &&
+        echo 'Database is ready!' &&
+        alembic upgrade head &&
+        uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload"
 
   db:
-    image: postgres:15
+    image: postgres:15-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=${POSTGRES_DB:-simplifychat}
+      - POSTGRES_USER=simplifychat
+      - POSTGRES_PASSWORD=simplifychat
+      - POSTGRES_DB=simplifychat
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U simplifychat"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data: 

@@ -61,15 +61,70 @@ cd simplifychat
 cp .env.example .env
 
 # Edit .env with your configuration
-# Make sure to replace all placeholder values with your actual credentials
+# Only GEMINI_API_KEY is required when using Docker, as database configuration is handled by docker-compose
 ```
 
 3. Build and run with Docker Compose:
 ```bash
+# Build and start the services
 docker-compose up --build
+
+# To run in detached mode (background)
+docker-compose up -d --build
 ```
 
 The API will be available at `http://localhost:8000`
+
+#### Docker Container Management
+
+```bash
+# Stop the containers
+docker-compose down
+
+# View container logs
+docker-compose logs -f
+
+# View logs for a specific service
+docker-compose logs -f web  # For the FastAPI application
+docker-compose logs -f db   # For the PostgreSQL database
+
+# Rebuild a specific service
+docker-compose up -d --build web
+
+# Remove all containers and volumes (WARNING: This will delete all data)
+docker-compose down -v
+```
+
+#### Database Management with Docker
+
+The PostgreSQL database is automatically configured with:
+- Database name: `simplifychat`
+- Username: `simplifychat`
+- Password: `simplifychat`
+- Port: `5432` (mapped to host machine)
+
+To access the database:
+```bash
+# Using docker exec
+docker-compose exec db psql -U simplifychat -d simplifychat
+
+# Using psql from host machine
+psql -h localhost -U simplifychat -d simplifychat
+```
+
+Common database operations:
+```bash
+# View tables
+\dt
+
+# Describe a specific table
+\d+ conversations
+\d+ messages
+
+# Basic queries
+SELECT * FROM conversations;
+SELECT * FROM messages;
+```
 
 ### Local Development
 
@@ -167,12 +222,31 @@ Once the application is running, you can access:
 
 To create a new migration:
 ```bash
+# With Docker
+docker-compose exec web alembic revision --autogenerate -m "description"
+
+# Local development
 alembic revision --autogenerate -m "description"
 ```
 
 To apply migrations:
 ```bash
+# With Docker
+docker-compose exec web alembic upgrade head
+
+# Local development
 alembic upgrade head
+```
+
+To check migration status:
+```bash
+# With Docker
+docker-compose exec web alembic current
+docker-compose exec web alembic history
+
+# Local development
+alembic current
+alembic history
 ```
 
 ## Docker Setup
